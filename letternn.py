@@ -1,3 +1,4 @@
+from typing import Any
 import PIL
 import numpy as np
 import csv
@@ -27,44 +28,53 @@ class BaseLayer:
     size: int
     num_inputs: int
 
-    @abstractmethod
-    def __init__(self, size: int, num_inputs: int) -> None:
+    @abstractproperty
+    def get_size(self) -> int:
         pass
 
     @abstractproperty
-    def get_size() -> int:
-        pass
-
-    @abstractproperty
-    def get_num_inputs() -> int:
+    def get_num_inputs(self) -> int:
         pass
 
     @abstractmethod
-    def feedforward(input: list[float]) -> list[float]:
+    def feedforward(self, input: np.ndarray[float]) -> np.ndarray[float]:
         pass
     
     @abstractmethod
-    def backpropogate(input: list[float]) -> list[float]:
+    def backpropogate(self, input: np.ndarray[float]) -> np.ndarray[float]:
         pass
 
 @dataclass
 class NeuralNetwork:
     layers: list[BaseLayer]
 
-    def __init__(self, layer_size: list[int]) -> None:
+    def __init__(self, layer_sizes: list[int]) -> None:
         self.layers = []
-        for i in range(layer_size):
-            self.layers.append(FeedForwardLayer(layer_size[i], layer_size[i-1]))
+        self.layers.append(InputLayer(layer_sizes[0]))
+        self.layers.append(ActivationLayer(layer_sizes[0], layer_sizes[0]))
+        for i in range(1, len(layer_sizes)):
+            self.layers.append(FeedForwardLayer(layer_sizes[i], layer_sizes[i-1]))
+            self.layers.append(ActivationLayer(layer_sizes[i], layer_sizes[i]))
 
-    def feedforward(self, input: list[float]):
+    def calculate_inputs(self, input: np.ndarray[float]):
         for layer in self.layers:
-            pass
+            print(input.shape)
+            input = layer.feedforward(input)
+        
+        return input
 
 
 @dataclass
 class ActivationLayer(BaseLayer):
     def __init__(self, size: int, num_inputs: int) -> None:
-        pass
+        self.size = size
+        self.num_inputs = num_inputs
+
+    def get_size(self) -> int:
+        return self.size
+    
+    def get_num_inputs(self) -> int:
+        return self.num_inputs
 
     def activation(self, x: float) -> float:
         return np.tanh(x)
@@ -73,18 +83,58 @@ class ActivationLayer(BaseLayer):
         cosh = np.cosh(x)
         return 1 / (cosh * cosh)
     
-    def feedforward(self, input: list[float]) -> list[float]:
-        return [self.activation(x) for x in input]
+    def feedforward(self, input: np.ndarray[float]) -> np.ndarray[float]:
+        return self.activation(input)
         
-    def backpropogate(self, input: list[float]) -> list[float]:
+    def backpropogate(self, input: np.ndarray[float]) -> np.ndarray[float]:
         pass
-
 
 @dataclass
 class FeedForwardLayer(BaseLayer):
     ninputs: int
     size: int
+    weights: np.ndarray
+    biases: np.ndarray
 
     def __init__(self, size: int, num_inputs: int) -> None:
         self.size = size
         self.num_inputs = num_inputs
+        self.weights = np.random.rand(num_inputs, size)
+        self.biases = np.random.rand(size, 1)
+
+    def get_size(self) -> int:
+        return self.size
+    
+    def get_num_inputs(self) -> int:
+        return self.num_inputs
+    
+    def feedforward(self, input: np.ndarray[float]) -> np.ndarray[float]:
+        #print(self.weights.shape, input.shape, self.biases.shape)
+        return self.weights.dot(input) + self.biases
+    
+    def backpropogate(self, input: np.ndarray[float]) -> np.ndarray[float]:
+        pass
+    
+class InputLayer(BaseLayer):
+    def __init__(self, size: int):
+        self.size = size
+        self.num_inputs = 0
+    
+    def feedforward(self, input: np.ndarray[float, Any]) -> np.ndarray[float, Any]:
+        #print(input.shape)
+        return input
+    
+    def backpropogate(self, input: np.ndarray[float, Any]) -> np.ndarray[float, Any]:
+        pass
+        
+
+nn = NeuralNetwork([2,2,1])
+'''
+for layer in nn.layers:
+    if isinstance(layer, FeedForwardLayer):
+        print(layer.weights, layer.biases)
+    else:
+        print(layer.size)
+'''
+
+print(nn.calculate_inputs(np.array([1, 1])))
