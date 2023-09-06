@@ -8,19 +8,19 @@ import random
 from dataclasses import dataclass
 from abc import abstractmethod, abstractproperty
 
-'''
 letters = string.ascii_lowercase
 
-with open('A_Z Handwritten Data.csv', 'r') as file:
+with open('AB Dataset.csv', 'r') as file:
     line_reader = csv.reader(file)
-    images = [[letters[image[0]], np.array(image[1:]).astype(int).reshape((28,28))] for image in line_reader if image[0] in ['0', '1']]
+    images = [[letters[int(image[0])], np.array(image[1:]).astype(int).reshape((28,28))] for image in line_reader]
     file.close()
 
 count = len(images)
 n_training_instances = int(count * 0.9)
 random.shuffle(images)
 training, test = images[:n_training_instances], images[n_training_instances:]
-'''
+plt.imshow(training[0][1], cmap='Greys')
+plt.show()
 
 
 @dataclass
@@ -95,12 +95,14 @@ class FeedForwardLayer(BaseLayer):
     size: int
     weights: np.ndarray
     biases: np.ndarray
+    alpha: float
 
     def __init__(self, size: int, num_inputs: int) -> None:
         self.size = size
         self.num_inputs = num_inputs
-        self.weights = np.random.rand(num_inputs, size)
-        self.biases = np.random.rand(size, 1)
+        self.weights = np.random.rand(size, num_inputs)
+        self.biases = np.random.rand(size)
+        self.alpha = 0.01
 
     def get_size(self) -> int:
         return self.size
@@ -109,7 +111,6 @@ class FeedForwardLayer(BaseLayer):
         return self.num_inputs
     
     def feedforward(self, input: np.ndarray[float]) -> np.ndarray[float]:
-        #print(self.weights.shape, input.shape, self.biases.shape)
         return self.weights.dot(input) + self.biases
     
     def backpropogate(self, input: np.ndarray[float]) -> np.ndarray[float]:
@@ -128,7 +129,8 @@ class InputLayer(BaseLayer):
         pass
         
 
-nn = NeuralNetwork([2,2,1])
+nn = NeuralNetwork([2,2])
+
 '''
 for layer in nn.layers:
     if isinstance(layer, FeedForwardLayer):
